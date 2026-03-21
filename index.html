@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PMタイプ診断</title>
+  <style>
+/* === リセット・ベース === */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  background: #f5f5f5;
+  color: #333;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* === ローディング === */
+.loading-screen {
+  position: fixed; inset: 0;
+  background: #1a1a2e;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 9999; transition: opacity 0.5s;
+}
+.loading-screen.hide { opacity: 0; pointer-events: none; }
+.loading-spinner {
+  width: 48px; height: 48px;
+  border: 4px solid rgba(255,255,255,0.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-screen p { color: #fff; margin-top: 16px; font-size: 14px; }
+
+/* === 共通レイアウト === */
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+.screen {
+  display: none;
+  min-height: 100vh;
+}
+.screen.active { display: block; }
+
+/* === トップページ === */
+.top-screen {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+  padding: 40px 24px;
+}
+.top-screen.active { display: flex; }
+.top-icon { font-size: 64px; margin-bottom: 24px; }
+.top-screen h1 {
+  color: #fff;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.3;
+  margin-bottom: 12px;
+}
+.top-screen .subtitle {
+  color: rgba(255,255,255,0.7);
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+.top-screen .time-badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  margin-bottom: 40px;
+}
+.start-btn {
+  background: #fff;
+  color: #1a1a2e;
+  border: none;
+  padding: 16px 48px;
+  font-size: 18px;
+  font-weight: 700;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+.start-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+.start-btn:active { transform: translateY(0); }
+
+/* === 質問ページ === */
+.question-screen {
+  background: #fff;
+  padding-bottom: 40px;
+}
+.q-header {
+  position: sticky; top: 0;
+  background: #fff;
+  padding: 16px 0 12px;
+  z-index: 10;
+  border-bottom: 1px solid #eee;
+}
+.q-progress-bar {
+  height: 4px;
+  background: #e0e0e0;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.q-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0f3460, #e94560);
+  transition: width 0.4s ease;
+  border-radius: 2px;
+}
+.q-count {
+  text-align: center;
+  font-size: 13px;
+  color: #999;
+}
+.q-body {
+  padding: 32px 0 24px;
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.q-number {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e94560;
+  margin-bottom: 12px;
+}
+.q-text {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.5;
+  margin-bottom: 32px;
+  color: #1a1a2e;
+}
+.q-options { display: flex; flex-direction: column; gap: 12px; }
+.q-option {
+  display: block;
+  width: 100%;
+  background: #f8f9fa;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+.q-option:hover { border-color: #0f3460; background: #f0f4ff; }
+.q-option:active { transform: scale(0.98); }
+.q-option .option-label {
+  display: inline-block;
+  font-weight: 700;
+  color: #0f3460;
+  margin-right: 8px;
+}
+.q-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-top: 24px;
+}
+.q-back-btn:hover { color: #333; }
+.q-back-btn.hidden { visibility: hidden; }
+
+/* 質問アニメーション */
+.q-body { transition: opacity 0.3s, transform 0.3s; }
+.q-body.slide-out { opacity: 0; transform: translateX(-30px); }
+.q-body.slide-in { opacity: 0; transform: translateX(30px); }
+
+/* === 結果ページ === */
+.result-screen { background: #f5f5f5; padding-bottom: 60px; }
+
+/* ゾーンA */
+.zone-a {
+  text-align: center;
+  padding: 48px 24px 40px;
+  border-radius: 0 0 24px 24px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+.zone-a::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.15);
+  z-index: 0;
+}
+.zone-a > * { position: relative; z-index: 1; }
+.zone-a img {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 24px;
+  border-radius: 12px;
+}
+.result-label {
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  padding: 4px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.result-type-name {
+  font-size: 36px;
+  font-weight: 900;
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+}
+.result-phrase {
+  font-size: 16px;
+  opacity: 0.9;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+.result-desc {
+  font-size: 14px;
+  line-height: 1.7;
+  opacity: 0.85;
+  max-width: 360px;
+  margin: 0 auto 24px;
+  white-space: pre-wrap;
+}
+
+/* スコアバー */
+.score-bars {
+  background: rgba(255,255,255,0.15);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 28px;
+}
+.score-bar-item { margin-bottom: 12px; }
+.score-bar-item:last-child { margin-bottom: 0; }
+.score-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.score-bar-track {
+  height: 8px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+.score-bar-fill {
+  position: absolute;
+  height: 100%;
+  background: #fff;
+  border-radius: 4px;
+  transition: width 1s ease;
+}
+.score-bar-fill.left { left: 0; }
+.score-bar-fill.right { right: 0; }
+
+/* シェアボタン */
+.share-buttons { display: flex; gap: 12px; justify-content: center; }
+.share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 24px;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.2s;
+}
+.share-btn:hover { transform: translateY(-2px); }
+.share-btn.x-btn { background: #000; color: #fff; }
+.share-btn.line-btn { background: #06C755; color: #fff; }
+
+/* ゾーンB */
+.zone-b {
+  padding: 24px 0;
+}
+.accordion-item {
+  background: #fff;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.accordion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 15px;
+  color: #1a1a2e;
+  transition: background 0.2s;
+}
+.accordion-header:hover { background: #f8f9fa; }
+.accordion-icon {
+  transition: transform 0.3s;
+  font-size: 12px;
+  color: #999;
+}
+.accordion-item.open .accordion-icon { transform: rotate(180deg); }
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.accordion-inner {
+  padding: 0 20px 16px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #555;
+}
+.accordion-inner ul { padding-left: 20px; margin-bottom: 12px; }
+.accordion-inner li { margin-bottom: 6px; }
+.chemistry-good { color: #228B22; }
+.chemistry-bad { color: #CC0000; }
+.llm-score {
+  display: inline-block;
+  background: #f0f4ff;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  color: #0f3460;
+  margin: 4px 0;
+}
+
+/* ゾーンC */
+.zone-c {
+  padding: 32px 0;
+}
+.zone-c h2 {
+  font-size: 20px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin-bottom: 4px;
+}
+.zone-c .zone-c-sub {
+  font-size: 13px;
+  color: #999;
+  margin-bottom: 20px;
+}
+.pain-cards { display: flex; flex-direction: column; gap: 10px; }
+.pain-card {
+  background: #fff;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+}
+.pain-card:hover { border-color: #0f3460; }
+.pain-card.selected {
+  border-color: #0f3460;
+  background: #f0f4ff;
+}
+.pain-card .pain-label {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #999;
+  margin-bottom: 4px;
+}
+.prompt-box {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+.prompt-box.open {
+  max-height: 500px;
+}
+.prompt-inner {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 12px;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  position: relative;
+}
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.copy-btn:hover { background: rgba(255,255,255,0.3); }
+.copy-btn.copied { background: #228B22; }
+
+/* ゾーンD */
+.zone-d {
+  padding: 32px 0 20px;
+  text-align: center;
+}
+.zone-d .cta-btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 12px;
+  text-decoration: none;
+  text-align: center;
+}
+.cta-primary {
+  background: #1a1a2e;
+  color: #fff;
+  border: none;
+}
+.cta-primary:hover { background: #16213e; }
+.cta-secondary {
+  background: #fff;
+  color: #1a1a2e;
+  border: 2px solid #e0e0e0;
+}
+.cta-secondary:hover { border-color: #999; }
+.cta-teaser {
+  margin-top: 24px;
+  font-size: 13px;
+  color: #999;
+}
+
+/* === AI生成注記 === */
+.ai-note {
+  padding: 20px 0;
+  text-align: center;
+  border-top: 1px solid #eee;
+}
+.ai-note p {
+  margin: 0;
+  font-size: 12px;
+  color: #999;
+}
+
+/* === 8タイプ一覧モーダル === */
+.modal-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 100;
+  overflow-y: auto;
+  padding: 24px 16px;
+}
+.modal-overlay.show { display: block; }
+.modal-content {
+  background: #fff;
+  border-radius: 16px;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px;
+}
+.modal-close {
+  float: right;
+  background: none; border: none;
+  font-size: 24px; cursor: pointer;
+  color: #999;
+}
+.modal-content h2 {
+  font-size: 20px;
+  margin-bottom: 20px;
+  color: #1a1a2e;
+}
+.type-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  transition: background 0.2s;
+}
+.type-list-item:hover { background: #f8f9fa; }
+.type-color-dot {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.type-list-name { font-weight: 700; font-size: 15px; }
+.type-list-phrase { font-size: 12px; color: #999; }
+
+/* === レスポンシブ === */
+@media (min-width: 600px) {
+  .pain-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+}
+  </style>
+</head>
+<body>
+
+<!-- ローディング画面 -->
+<div id="loading" class="loading-screen">
+  <div class="loading-spinner"></div>
+  <p>読み込み中...</p>
+</div>
+
+<!-- 画面1：トップページ -->
+<div id="top-screen" class="screen top-screen active">
+  <div class="top-icon">🎯</div>
+  <h1>あなたは何型の<br>PM？</h1>
+  <p class="subtitle">3つの軸で分かる、8つのPMタイプ診断</p>
+  <span class="time-badge">⏱ 所要時間 約2分</span>
+  <button class="start-btn" onclick="startDiagnosis()">診断をはじめる</button>
+</div>
+
+<!-- 画面2：質問ページ -->
+<div id="question-screen" class="screen question-screen">
+  <div class="container">
+    <div class="q-header">
+      <div class="q-progress-bar">
+        <div class="q-progress-fill" id="q-progress-fill" style="width:0%"></div>
+      </div>
+      <div class="q-count" id="q-count">1 / 12</div>
+    </div>
+    <div class="q-body" id="q-body">
+      <div class="q-number" id="q-number">Q1</div>
+      <div class="q-text" id="q-text"></div>
+      <div class="q-options">
+        <button class="q-option" onclick="selectAnswer('A')">
+          <span class="option-label">A.</span>
+          <span id="q-optA-text"></span>
+        </button>
+        <button class="q-option" onclick="selectAnswer('B')">
+          <span class="option-label">B.</span>
+          <span id="q-optB-text"></span>
+        </button>
+      </div>
+      <button class="q-back-btn hidden" id="q-back-btn" onclick="goBack()">
+        ← 前の質問に戻る
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 画面3：結果ページ -->
+<div id="result-screen" class="screen result-screen">
+
+  <!-- ゾーンA：ファーストビュー -->
+  <div id="zone-a" class="zone-a">
+    <div class="result-label">あなたのPMタイプ</div>
+    <div class="result-type-name" id="result-type-name"></div>
+    <div class="result-phrase" id="result-phrase"></div>
+    <div class="result-desc" id="result-desc"></div>
+
+    <!-- スコアバー -->
+    <div class="score-bars">
+      <div class="score-bar-item" id="score-bar-1">
+        <div class="score-bar-labels">
+          <span class="label-left"></span>
+          <span class="label-right"></span>
+        </div>
+        <div class="score-bar-track"><div class="score-bar-fill left" style="width:50%"></div></div>
+      </div>
+      <div class="score-bar-item" id="score-bar-2">
+        <div class="score-bar-labels">
+          <span class="label-left"></span>
+          <span class="label-right"></span>
+        </div>
+        <div class="score-bar-track"><div class="score-bar-fill left" style="width:50%"></div></div>
+      </div>
+      <div class="score-bar-item" id="score-bar-3">
+        <div class="score-bar-labels">
+          <span class="label-left"></span>
+          <span class="label-right"></span>
+        </div>
+        <div class="score-bar-track"><div class="score-bar-fill left" style="width:50%"></div></div>
+      </div>
+    </div>
+
+    <!-- シェアボタン -->
+    <div class="share-buttons">
+      <a id="share-x" class="share-btn x-btn" href="#" target="_blank" onclick="onShareClick('x')">
+        𝕏 でシェア
+      </a>
+      <a id="share-line" class="share-btn line-btn" href="#" target="_blank" onclick="onShareClick('line')">
+        LINE でシェア
+      </a>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- ゾーンB：サマリー -->
+    <div class="zone-b">
+      <div class="accordion-item" data-section="strength">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          💪 得意なPM業務
+          <span class="accordion-icon">▼</span>
+        </div>
+        <div class="accordion-content">
+          <div class="accordion-inner">
+            <ul id="strength-list"></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-section="chemistry">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          🤝 相性
+          <span class="accordion-icon">▼</span>
+        </div>
+        <div class="accordion-content">
+          <div class="accordion-inner" id="chemistry-content"></div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-section="llm">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          🤖 LLMとの関係
+          <span class="accordion-icon">▼</span>
+        </div>
+        <div class="accordion-content">
+          <div class="accordion-inner" id="llm-content"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ゾーンC：悩みカード -->
+    <div class="zone-c">
+      <h2>あなたの"あるある"、どれ？</h2>
+      <p class="zone-c-sub">複数選べます。選ぶとAIプロンプトが出てきます。</p>
+      <div class="pain-cards" id="pain-cards"></div>
+    </div>
+
+    <!-- ゾーンD：フッター -->
+    <div class="zone-d">
+      <button class="cta-btn cta-primary" onclick="onRetry()">もう一度診断する</button>
+      <button class="cta-btn cta-secondary" onclick="onShowAllTypes()">他のタイプも見る</button>
+      <p class="cta-teaser" onclick="onLearnMore()">もっと詳しく知りたい方へ → β版準備中</p>
+    </div>
+
+    <!-- 注記 -->
+    <div class="ai-note">
+      <p>※ このページのキャラクターイラストはAIで生成されています</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- 8タイプ一覧モーダル -->
+<div id="all-types-modal" class="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <h2>8つのPMタイプ</h2>
+    <div id="type-list"></div>
+  </div>
+</div>
+
+<script>
+// === Firebase設定 ===
+// （一時的にコメントアウト - 診断機能のみで動作確認）
+// var db = null;
+
+// === セッション管理 ===
+var sessionId = crypto.randomUUID();
+var answers = {};
+var currentQuestion = 0;
+var resultType = '';
+
+// === ログ送信（Firebase） ===
+var lastLogTime = 0;
+var LOG_THROTTLE_MS = 300;
+
+function logEvent(eventName, data) {
+  var now = Date.now();
+  if (now - lastLogTime < LOG_THROTTLE_MS) {
+    return;
+  }
+  lastLogTime = now;
+
+  // （一時的にログ送信を無効化 - 診断機能のみで動作確認）
+  // console.log(eventName, data);
+}
+
+// === 質問データ ===
+var questions = [
+  {
+    id: 'Q1', axis: 'A',
+    text: '状況が混乱しているとき、先に知りたいのはどちらですか？',
+    optA: '今、現場で何が起きているか',
+    optB: 'そもそも何が前提として崩れているか'
+  },
+  {
+    id: 'Q2', axis: 'A',
+    text: '会議が噛み合っていないと感じたとき、内心で原因だと思うことが多いのはどちらですか？',
+    optA: '具体の話が足りない',
+    optB: '前提や構造の話が揃っていない'
+  },
+  {
+    id: 'Q3', axis: 'A',
+    text: '新しい案件に入ったとき、最初にやりたくなるのはどちらですか？',
+    optA: '現場の人や状況を見に行く',
+    optB: '全体像や関係図を整理する'
+  },
+  {
+    id: 'Q4', axis: 'A',
+    text: '会議中に「話が噛み合っていないな」と感じるとき、どちらに原因があると思うことが多いですか？',
+    optA: '話が現場感とズレているとき',
+    optB: '話の筋や構造がズレているとき'
+  },
+  {
+    id: 'Q5', axis: 'B',
+    text: '話し合いが止まったとき、反射的にこうしたいと思うのはどちらに近いですか？',
+    optA: '自分で方向を決めたくなる',
+    optB: 'その場に委ねてみんなの反応を見て決めたくなる'
+  },
+  {
+    id: 'Q6', axis: 'B',
+    text: '会議で何かを決める場面で、ついやってしまうのはどちらですか？',
+    optA: '最終判断だけは自分で確認する',
+    optB: 'その場の流れで決まるのを待つ'
+  },
+  {
+    id: 'Q7', axis: 'B',
+    text: '会議の終わりにどうなっているとより安心できるのはどちらになっているときですか？',
+    optA: '会議で何が決まったか、次のアクションが明確になっている',
+    optB: '対話が十分行われてみんなが納得した空気になっている'
+  },
+  {
+    id: 'Q8', axis: 'B',
+    text: '会議中に出た意見について「どうします？」と聞かれたとき、「自分だったらこうする」に近いのはどちらですか？',
+    optA: 'じゃあこうしよう、と決める',
+    optB: 'みんなどう思う？と返す'
+  },
+  {
+    id: 'Q9', axis: 'C',
+    text: 'プロジェクトを前に進めようと思うとき、自分の動き方はどちらに近いイメージですか？',
+    optA: '前に出て引っ張る',
+    optB: '裏から整えて支える'
+  },
+  {
+    id: 'Q10', axis: 'C',
+    text: '場が停滞していると感じるとき、やりがちなのはどちらですか？',
+    optA: '自分が発言して空気を変える',
+    optB: '裏で必要な材料や段取りを整える'
+  },
+  {
+    id: 'Q11', axis: 'C',
+    text: '自分が「この人がいて助かった」と他の人から思われやすいのは、どちらの場合だと思いますか？',
+    optA: '前に立って場を動かしたとき',
+    optB: '見えないところで崩れを防いだとき'
+  },
+  {
+    id: 'Q12', axis: 'C',
+    text: '成果の出し方として、しっくりくるのはどちらですか？',
+    optA: '自分が前で押し出して結果を作る',
+    optB: '他の人が動きやすい状態を作る'
+  }
+];
+
+// === タイプデータ ===
+var typeData = {
+  'GJZ': {
+    name: 'トツゲキ隊長',
+    color: '#CC0000',
+    image: '/pm-type-diagnosis/image/totugekitaichou.png',
+    phrase: '「今そこで何起きてる？」',
+    desc: '思いついたら現場へ直行。決めてから考えるスピード重視型。\n🦂 止まると不安になる。たまに後続がついてきてない。',
+    strengths: ['障害・トラブル発生時の初動対応', '未定事項が多い案件の立ち上げ', '止まっているタスクの強制再起動', '→「とりあえず現場見てくる」を業務にできる人'],
+    chemGood: ['ウラ配線（後始末と構造補正を全部引き取ってくれる）', 'アワセ職（暴走前に角を丸めてくれる）'],
+    chemBad: ['コウゾウ司令（動く前に止められる）', 'ミマモリ役（反応が遅く見えてイラつく）'],
+    llmRel: 'LLM = 後追い記録係 / 自分 = 現場突撃',
+    llmScore: 0.65,
+    llmRx: '「自分が行かなくても回る初動」を設計する側に回る。走る人 → 走らせる人へ。'
+  },
+  'GJU': {
+    name: 'シゴト匠',
+    color: '#8B4513',
+    image: '/pm-type-diagnosis/image/shigototakumi.png',
+    phrase: '「俺がやるよ」',
+    desc: '自分で判断し、黙って手を動かす職人気質。\n🦂 「任せて」と言われる前に終わらせているが、評価されにくい。',
+    strengths: ['WBSの実装レベルへの落とし込み', 'タスク実行・成果物の品質担保', '仕様どおり作られているかの実地確認', '→PMなのに「作業が一番うまい」タイプ'],
+    chemGood: ['クウキ点火（表で動かしてくれるので作業に集中できる）', 'コウゾウ司令（判断が明確で迷いが減る）'],
+    chemBad: ['リネン演説（話が長く、手が止まる）', 'トツゲキ隊長（仕様が途中で変わる）'],
+    llmRel: 'LLM = 雑な後輩 / 自分 = 厳しいレビュー担当',
+    llmScore: 0.50,
+    llmRx: '品質基準・レビュー観点を「決める側」に上がる。作る人 → 作り方を決める人へ。'
+  },
+  'GBZ': {
+    name: 'クウキ点火',
+    color: '#FF6600',
+    image: '/pm-type-diagnosis/image/kuukitenka.png',
+    phrase: '「今いけるでしょ」',
+    desc: '流れと勢いを読んで、前に立って場を動かすタイプ。\n🦂 盛り上げたあと、着地はだいたい誰か任せ。',
+    strengths: ['定例会・キックオフのファシリテーション', '停滞チームのモチベーション再点火', '関係者を巻き込む合意形成の場づくり', '→会議が"動く時間"になる人'],
+    chemGood: ['ミマモリ役（盛り上げすぎた後の安全装置）', 'シゴト匠（ノリを成果に変えてくれる）'],
+    chemBad: ['ウラ配線（反応が薄く、手応えがない）', 'トツゲキ隊長（前が渋滞する）'],
+    llmRel: 'LLM = 台本係 / 自分 = 本番役者',
+    llmScore: 0.75,
+    llmRx: '場づくりを「偶発」から「再現可能」にする。感覚派 → 型を持つファシリテーターへ。'
+  },
+  'GBU': {
+    name: 'ミマモリ役',
+    color: '#228B22',
+    image: '/pm-type-diagnosis/image/mimamoriyaku.png',
+    phrase: '「何かあったら声かけて」',
+    desc: '状況を見渡し、必要なときだけ裏から支える安定型。\n🦂 何も起きないと存在に気づかれない。',
+    strengths: ['進捗・リスクの継続モニタリング', 'メンバーの負荷・疲労の早期検知', '小さな異常の事前吸収・事故防止', '→問題が起きないことが成果'],
+    chemGood: ['リネン演説（前に立って語ってくれる）', 'アワセ職（一緒に場を安定させられる）'],
+    chemBad: ['トツゲキ隊長（早すぎてフォローが追いつかない）', 'クウキ点火（火をつけすぎる）'],
+    llmRel: 'LLM = センサー / 自分 = 判断者',
+    llmScore: 0.70,
+    llmRx: '「防いだ事故」を言語化・可視化する。静かな人 → 信頼される守護者へ。'
+  },
+  'KJZ': {
+    name: 'コウゾウ司令',
+    color: '#000080',
+    image: '/pm-type-diagnosis/image/kouzoushirei.png',
+    phrase: '「全体こう組む」',
+    desc: '全体像を描き、自分の判断で前に出て指揮を執る設計主導型。\n🦂 筋が通らない動きに、内心かなりイラついている。',
+    strengths: ['プロジェクト全体設計（スコープ・方針）', '優先順位・トレードオフ判断', 'ステークホルダーへの最終意思表示', '→「決める人」が明確な案件で真価を発揮'],
+    chemGood: ['シゴト匠（設計どおりに確実に進めてくれる）', 'アワセ職（設計思想を翻訳してくれる）'],
+    chemBad: ['トツゲキ隊長（設計を待たない）', 'クウキ点火（筋よりノリを優先する）'],
+    llmRel: 'LLM = 有能な参謀 / 自分 = 決断者',
+    llmScore: 0.90,
+    llmRx: 'LLMを「参謀」として前提に組み込む。考える人 → 考えさせる人へ。'
+  },
+  'KJU': {
+    name: 'ウラ配線',
+    color: '#36454F',
+    image: '/pm-type-diagnosis/image/urahaisen.png',
+    phrase: '「そこ、裏で直す」',
+    desc: '表に出ず、構造と仕組みで物事を制御する黒子タイプ。\n🦂 全部分かっているが、説明する気はあまりない。',
+    strengths: ['業務フロー・進行ルールの設計', '情報共有・連携の仕組み化', '属人化している作業の裏側整理', '→気づくと「回るようになっている」'],
+    chemGood: ['トツゲキ隊長（表で全部引っ張ってくれる）', 'コウゾウ司令（構造会話が成立する）'],
+    chemBad: ['クウキ点火（意図が読めず疲れる）', 'リネン演説（抽象度が高すぎる）'],
+    llmRel: 'LLM = 自動化エンジン / 自分 = 最終設計者',
+    llmScore: 0.60,
+    llmRx: '仕組みを「誰が理解しているか」を自分に残す。作る人 → 設計思想の所有者へ。'
+  },
+  'KBZ': {
+    name: 'リネン演説',
+    color: '#800080',
+    image: '/pm-type-diagnosis/image/rinenenzetsu.png',
+    phrase: '「この話の本質はね」',
+    desc: '意味や理想を言葉にして、人を動かそうとする語り部型。\n🦂 熱量は高いが、具体は後回しになりがち。',
+    strengths: ['プロジェクトの目的・価値の言語化', '背景説明・思想共有（Whyの説明）', '組織外・上位層へのストーリー説明', '→「それ、何のためだっけ？」に答える人'],
+    chemGood: ['ミマモリ役（話を現実に着地させてくれる）', 'アワセ職（意味を噛み砕いてくれる）'],
+    chemBad: ['シゴト匠（結論を急かされる）', 'ウラ配線（反応がなく不安になる）'],
+    llmRel: 'LLM = 下書き係 / 自分 = 魂を込める人',
+    llmScore: 0.45,
+    llmRx: '「語る」から「決断前提で語る」へ。語り部 → 意思決定を動かす語りへ。'
+  },
+  'KBU': {
+    name: 'アワセ職',
+    color: '#E1AD01',
+    image: '/pm-type-diagnosis/image/awaseshoku.png',
+    phrase: '「両方いける形探すか」',
+    desc: '立場や意見をつなぎ、衝突を未然に防ぐ調整役。\n🦂 全員に分かってもらおうとして、自分の意見が消える。',
+    strengths: ['部門間・立場間の調整', '意見対立時の論点整理と折衝', '抽象と具体の翻訳（双方への説明）', '→誰かがいないと話が前に進まない場の救世主'],
+    chemGood: ['コウゾウ司令（芯のある判断をもらえる）', 'トツゲキ隊長（動き出しを任せられる）'],
+    chemBad: ['全方位ケア状態（全タイプと同時に関わると消耗）', 'リネン演説（永遠に調整が終わらない）'],
+    llmRel: 'LLM = 超高速書記＋整理係 / 自分 = 調整と説得',
+    llmScore: 0.85,
+    llmRx: 'AI時代に需要が増えるタイプ。ただし消耗しやすい。'
+  }
+};
+
+// === 悩みカード＋プロンプト ===
+var painCards = [
+  {
+    id: 'PAIN-1',
+    text: 'やることが整理される前に動いてしまい、手戻りが多い',
+    prompt: 'これから以下のタスクに着手します。\n着手前に確認すべき前提条件、関係者への事前共有事項、\n手戻りリスクがある箇所をチェックリスト形式で出してください。\n「まず動きたい」気持ちが強いので、見落としがちな観点を重点的にお願いします。\n\n【タスク概要】\n（ここにタスク内容を書く）\n【現時点で分かっていること】\n（ここに書く）'
+  },
+  {
+    id: 'PAIN-2',
+    text: '自分の仕事や貢献を、うまく言語化できない',
+    prompt: '以下の作業内容を、上司や関係者に説明するための文章にしてください。\n作業の中身には自信がありますが、それを「なぜ重要か」「何が難しかったか」\n「自分がいなかったらどうなっていたか」を伝える言語化が苦手です。\n評価につながるように、価値が伝わる表現にしてください。\n\n【やったこと】\n（ここに作業内容を箇条書きで書く）'
+  },
+  {
+    id: 'PAIN-3',
+    text: '関係者の調整が終わらず、前に進まない',
+    prompt: '以下の関係者がそれぞれ異なる意見を持っています。\n各者の主張と背景を整理し、対立している論点と一致している論点を分けてください。\nその上で、落としどころの候補を3つ提案してください。\nそれぞれの候補で「誰が何を譲るか」も明示してください。\n\n【関係者と主張】\n（ここに各者の意見を書く）'
+  },
+  {
+    id: 'PAIN-4',
+    text: '理想や方針はあるのに、具体のアクションに落ちない',
+    prompt: '以下は私が考えているプロジェクトの方針・目的・理想像です。\nこの内容を踏まえて、具体的な「What（何をやるか）」と\n「How（どうやるか）」に変換してください。\n理想を殺さず、でも明日から動ける粒度にしてください。\n\n【方針・目的・理想像】\n（ここに自分の考えを書く）'
+  },
+  {
+    id: 'PAIN-5',
+    text: '自分がやった方が早いが、それだとチームが育たない',
+    prompt: '以下のタスクを自分でやらずにメンバーに委任したいです。\nただし品質は落としたくありません。\n「ここまでは任せてOK／ここは自分がレビューすべき」の線引きと、\nメンバーに渡す指示書のドラフトを作ってください。\n\n【タスク内容】\n（ここにタスクを書く）\n【メンバーのスキルレベル】\n（ここに補足を書く）'
+  },
+  {
+    id: 'PAIN-6',
+    text: 'LLMやAIをどう使えばいいか、自分の仕事との距離感が分からない',
+    prompt: '私はプロジェクトマネージャーです。\n以下の業務の中で、LLM（ChatGPTやClaudeなど）を活用して\n効率化できそうな部分を提案してください。\n全部AIに任せるのではなく、「AIに任せる部分」と\n「人が判断すべき部分」を明確に分けてください。\n\n【自分の主な業務内容】\n（ここに箇条書きで書く）\n【AIに対する現在の印象・不安】\n（ここに正直に書く）'
+  }
+];
+
+// === 画面切り替え ===
+function showScreen(screenId) {
+  document.querySelectorAll('.screen').forEach(function(s) {
+    s.classList.remove('active');
+  });
+  var screen = document.getElementById(screenId);
+  screen.classList.add('active');
+  setTimeout(function() {
+    screen.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
+
+// === トップページ ===
+function startDiagnosis() {
+  logEvent('diagnosis_start', { user_agent: navigator.userAgent });
+  currentQuestion = 0;
+  answers = {};
+  showScreen('question-screen');
+  renderQuestion();
+}
+
+// === 質問ページ ===
+function renderQuestion() {
+  var q = questions[currentQuestion];
+
+  var pct = ((currentQuestion) / questions.length) * 100;
+  document.getElementById('q-progress-fill').style.width = pct + '%';
+  document.getElementById('q-count').textContent = (currentQuestion + 1) + ' / ' + questions.length;
+
+  var backBtn = document.getElementById('q-back-btn');
+  if (currentQuestion === 0) {
+    backBtn.classList.add('hidden');
+  } else {
+    backBtn.classList.remove('hidden');
+  }
+
+  document.getElementById('q-number').textContent = q.id;
+  document.getElementById('q-text').textContent = q.text;
+  document.getElementById('q-optA-text').textContent = q.optA;
+  document.getElementById('q-optB-text').textContent = q.optB;
+}
+
+function selectAnswer(choice) {
+  if (choice !== 'A' && choice !== 'B') return;
+
+  var q = questions[currentQuestion];
+  answers[q.id] = choice;
+
+  logEvent('question_answer', {
+    question_id: q.id,
+    answer: choice
+  });
+
+  var body = document.getElementById('q-body');
+  body.classList.add('slide-out');
+
+  setTimeout(function() {
+    currentQuestion++;
+    if (currentQuestion >= questions.length) {
+      calculateResult();
+    } else {
+      renderQuestion();
+      body.classList.remove('slide-out');
+      body.classList.add('slide-in');
+      setTimeout(function() {
+        body.classList.remove('slide-in');
+      }, 50);
+    }
+  }, 250);
+}
+
+function goBack() {
+  if (currentQuestion > 0) {
+    logEvent('question_back', { from_question_id: questions[currentQuestion].id });
+    currentQuestion--;
+    renderQuestion();
+  }
+}
+
+// === スコア計算 ===
+function calculateResult() {
+  var scores = { G: 0, K: 0, J: 0, B: 0, Z: 0, U: 0 };
+
+  questions.forEach(function(q) {
+    var ans = answers[q.id];
+    if (!ans) return;
+    if (q.axis === 'A') {
+      if (ans === 'A') scores.G++; else scores.K++;
+    } else if (q.axis === 'B') {
+      if (ans === 'A') scores.J++; else scores.B++;
+    } else if (q.axis === 'C') {
+      if (ans === 'A') scores.Z++; else scores.U++;
+    }
+  });
+
+  var axis1 = scores.G >= scores.K ? 'G' : 'K';
+  if (scores.G === scores.K) axis1 = Math.random() < 0.5 ? 'G' : 'K';
+
+  var axis2 = scores.J >= scores.B ? 'J' : 'B';
+  if (scores.J === scores.B) axis2 = Math.random() < 0.5 ? 'J' : 'B';
+
+  var axis3 = scores.Z >= scores.U ? 'Z' : 'U';
+  if (scores.Z === scores.U) axis3 = Math.random() < 0.5 ? 'Z' : 'U';
+
+  resultType = axis1 + axis2 + axis3;
+
+  logEvent('diagnosis_complete', {
+    result_type: resultType,
+    scores: scores
+  });
+
+  showResult(scores);
+}
+
+// === 結果表示 ===
+function showResult(scores) {
+  var type = typeData[resultType];
+  if (!type) return;
+
+  var zoneA = document.getElementById('zone-a');
+  zoneA.style.background = type.color;
+
+  // 画像を表示
+  if (type.image) {
+    var img = document.createElement('img');
+    img.src = type.image;
+    img.style.width = '160px';
+    img.style.height = '160px';
+    img.style.marginBottom = '20px';
+    img.style.borderRadius = '12px';
+    var resultLabel = document.querySelector('.result-label');
+    zoneA.insertBefore(img, resultLabel.nextSibling);
+  }
+
+  document.getElementById('result-type-name').textContent = type.name;
+  document.getElementById('result-phrase').textContent = type.phrase;
+  document.getElementById('result-desc').textContent = type.desc;
+
+  renderScoreBar('score-bar-1', 'ゲンバ型', 'コウゾウ型', scores.G, scores.K);
+  renderScoreBar('score-bar-2', 'ジブン決定', 'バノリ決定', scores.J, scores.B);
+  renderScoreBar('score-bar-3', 'ゼンメン型', 'ウラカタ型', scores.Z, scores.U);
+
+  var appUrl = window.location.href.split('?')[0];
+  var shareText = 'PMタイプ診断の結果は【' + type.name + '】でした🦂 #PMタイプ診断';
+  var xUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText) + '&url=' + encodeURIComponent(appUrl);
+  var lineUrl = 'https://social-plugins.line.me/lineit/share?url=' + encodeURIComponent(appUrl);
+
+  document.getElementById('share-x').href = xUrl;
+  document.getElementById('share-line').href = lineUrl;
+
+  renderAccordion(type);
+  renderPainCards();
+
+  showScreen('result-screen');
+  document.getElementById('q-progress-fill').style.width = '100%';
+}
+
+function renderScoreBar(id, labelL, labelR, scoreL, scoreR) {
+  var el = document.getElementById(id);
+  var total = scoreL + scoreR;
+  var pctL = total > 0 ? (scoreL / total) * 100 : 50;
+  el.querySelector('.label-left').textContent = labelL + ' ' + scoreL;
+  el.querySelector('.label-right').textContent = scoreR + ' ' + labelR;
+
+  var fill = el.querySelector('.score-bar-fill');
+  if (scoreL >= scoreR) {
+    fill.className = 'score-bar-fill left';
+    fill.style.width = pctL + '%';
+  } else {
+    fill.className = 'score-bar-fill right';
+    fill.style.width = (100 - pctL) + '%';
+  }
+}
+
+// === アコーディオン描画 ===
+function renderAccordion(type) {
+  var strengthList = document.getElementById('strength-list');
+  strengthList.innerHTML = '';
+  type.strengths.forEach(function(s) {
+    var li = document.createElement('li');
+    li.textContent = s;
+    strengthList.appendChild(li);
+  });
+
+  var chemContent = document.getElementById('chemistry-content');
+  chemContent.innerHTML = '';
+
+  var goodTitle = document.createElement('p');
+  var goodStrong = document.createElement('strong');
+  goodStrong.textContent = '👍 助かる相手';
+  goodTitle.appendChild(goodStrong);
+  chemContent.appendChild(goodTitle);
+
+  var goodList = document.createElement('ul');
+  type.chemGood.forEach(function(c) {
+    var li = document.createElement('li');
+    li.className = 'chemistry-good';
+    li.textContent = c;
+    goodList.appendChild(li);
+  });
+  chemContent.appendChild(goodList);
+
+  var badTitle = document.createElement('p');
+  var badStrong = document.createElement('strong');
+  badStrong.textContent = '⚠️ 事故りやすい相手';
+  badTitle.appendChild(badStrong);
+  chemContent.appendChild(badTitle);
+
+  var badList = document.createElement('ul');
+  type.chemBad.forEach(function(c) {
+    var li = document.createElement('li');
+    li.className = 'chemistry-bad';
+    li.textContent = c;
+    badList.appendChild(li);
+  });
+  chemContent.appendChild(badList);
+
+  var llmContent = document.getElementById('llm-content');
+  llmContent.innerHTML = '';
+
+  var relP = document.createElement('p');
+  relP.textContent = type.llmRel;
+  llmContent.appendChild(relP);
+
+  var scoreP = document.createElement('p');
+  scoreP.textContent = 'LLM時代の生き残り可能性: ';
+  var scoreSpan = document.createElement('span');
+  scoreSpan.className = 'llm-score';
+  scoreSpan.textContent = (type.llmScore * 100) + '%';
+  scoreP.appendChild(scoreSpan);
+  llmContent.appendChild(scoreP);
+
+  var rxP = document.createElement('p');
+  var rxStrong = document.createElement('strong');
+  rxStrong.textContent = '処方箋: ';
+  rxP.appendChild(rxStrong);
+  rxP.appendChild(document.createTextNode(type.llmRx));
+  llmContent.appendChild(rxP);
+}
+
+function toggleAccordion(el) {
+  var item = el.parentElement;
+  var content = item.querySelector('.accordion-content');
+  var isOpen = item.classList.contains('open');
+
+  if (isOpen) {
+    item.classList.remove('open');
+    content.style.maxHeight = '0';
+  } else {
+    item.classList.add('open');
+    content.style.maxHeight = content.scrollHeight + 'px';
+
+    var section = item.dataset.section;
+    logEvent('summary_expand', { section: section });
+  }
+}
+
+// === 悩みカード ===
+function renderPainCards() {
+  var container = document.getElementById('pain-cards');
+  container.innerHTML = '';
+
+  painCards.forEach(function(pain) {
+    var card = document.createElement('div');
+    card.className = 'pain-card';
+    card.dataset.painId = pain.id;
+
+    var label = document.createElement('div');
+    label.className = 'pain-label';
+    label.textContent = pain.id;
+    card.appendChild(label);
+
+    var text = document.createElement('div');
+    text.textContent = pain.text;
+    card.appendChild(text);
+
+    var promptBox = document.createElement('div');
+    promptBox.className = 'prompt-box';
+    promptBox.id = 'prompt-' + pain.id;
+
+    var promptInner = document.createElement('div');
+    promptInner.className = 'prompt-inner';
+    promptInner.textContent = pain.prompt;
+
+    var copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-btn';
+    copyBtn.textContent = 'コピー';
+    copyBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      copyPrompt(e, pain.id);
+    });
+
+    promptInner.insertBefore(copyBtn, promptInner.firstChild);
+    promptBox.appendChild(promptInner);
+    card.appendChild(promptBox);
+
+    card.addEventListener('click', function(e) {
+      if (e.target.classList.contains('copy-btn')) return;
+      togglePainCard(card, pain.id);
+    });
+
+    container.appendChild(card);
+  });
+}
+
+function togglePainCard(card, painId) {
+  var isSelected = card.classList.contains('selected');
+  var promptBox = document.getElementById('prompt-' + painId);
+
+  if (isSelected) {
+    card.classList.remove('selected');
+    promptBox.classList.remove('open');
+    logEvent('pain_deselect', { pain_id: painId });
+  } else {
+    card.classList.add('selected');
+    promptBox.classList.add('open');
+    logEvent('pain_select', { pain_id: painId });
+  }
+}
+
+function copyPrompt(e, painId) {
+  var pain = painCards.find(function(p) { return p.id === painId; });
+  if (!pain) return;
+
+  navigator.clipboard.writeText(pain.prompt).then(function() {
+    var btn = e.target;
+    btn.textContent = 'コピー済み';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.textContent = 'コピー';
+      btn.classList.remove('copied');
+    }, 2000);
+
+    logEvent('prompt_copy', { pain_id: painId });
+  });
+}
+
+// === シェアボタン ===
+function onShareClick(platform) {
+  logEvent('share_click', { platform: platform });
+}
+
+// === フッター CTA ===
+function onRetry() {
+  logEvent('cta_click', { cta_type: 'retry' });
+  resultType = '';
+  startDiagnosis();
+}
+
+function onShowAllTypes() {
+  logEvent('cta_click', { cta_type: 'all_types' });
+  document.getElementById('all-types-modal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('all-types-modal').classList.remove('show');
+}
+
+function onLearnMore() {
+  logEvent('cta_click', { cta_type: 'learn_more' });
+}
+
+// === 8タイプ一覧モーダル ===
+function renderAllTypesModal() {
+  var list = document.getElementById('type-list');
+  var codes = ['GJZ','GJU','GBZ','GBU','KJZ','KJU','KBZ','KBU'];
+  codes.forEach(function(code) {
+    var t = typeData[code];
+    var item = document.createElement('div');
+    item.className = 'type-list-item';
+
+    var dot = document.createElement('div');
+    dot.className = 'type-color-dot';
+    dot.style.background = t.color;
+    item.appendChild(dot);
+
+    var info = document.createElement('div');
+    var nameDiv = document.createElement('div');
+    nameDiv.className = 'type-list-name';
+    nameDiv.textContent = t.name;
+    info.appendChild(nameDiv);
+
+    var phraseDiv = document.createElement('div');
+    phraseDiv.className = 'type-list-phrase';
+    phraseDiv.textContent = t.phrase;
+    info.appendChild(phraseDiv);
+
+    item.appendChild(info);
+    list.appendChild(item);
+  });
+}
+
+// === 初期化 ===
+window.addEventListener('DOMContentLoaded', function() {
+  renderAllTypesModal();
+  setTimeout(function() {
+    document.getElementById('loading').classList.add('hide');
+    setTimeout(function() {
+      document.getElementById('loading').style.display = 'none';
+    }, 500);
+  }, 800);
+});
+</script>
+</body>
+</html>
