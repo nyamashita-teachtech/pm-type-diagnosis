@@ -658,22 +658,9 @@ body {
   </div>
 </div>
 
-<script type="module">
-// === Firebase設定 ===
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDohx1yl2e-yLewJnnn6YIz54oaGwBVkDw",
-  authDomain: "pmtype-diagnosis.firebaseapp.com",
-  projectId: "pmtype-diagnosis",
-  storageBucket: "pmtype-diagnosis.firebasestorage.app",
-  messagingSenderId: "512479539263",
-  appId: "1:512479539263:web:740046edc7ffa0b718888a"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+<script>
+// Firebaseは一時的にコメントアウト（ログ機能なしで動作確認）
+// 診断機能だけで動くようにする
 
 // === セッション管理 ===
 var sessionId = crypto.randomUUID();
