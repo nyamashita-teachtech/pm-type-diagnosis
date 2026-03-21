@@ -899,8 +899,11 @@ function showScreen(screenId) {
   document.querySelectorAll('.screen').forEach(function(s) {
     s.classList.remove('active');
   });
-  document.getElementById(screenId).classList.add('active');
-  window.scrollTo(0, 0);
+  var screen = document.getElementById(screenId);
+  screen.classList.add('active');
+  setTimeout(function() {
+    screen.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
 }
 
 // === トップページ ===
