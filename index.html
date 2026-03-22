@@ -466,6 +466,201 @@ body {
   color: #999;
 }
 
+/* === タイプ一覧ページ === */
+.typelist-screen {
+  padding-bottom: 40px;
+}
+.typelist-header {
+  text-align: center;
+  padding: 40px 24px 32px;
+}
+.typelist-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 12px;
+  color: #fff;
+}
+.typelist-description {
+  font-size: 14px;
+  color: #ccc;
+  margin: 0;
+}
+
+/* タブ切替 */
+.typelist-tabs {
+  display: flex;
+  gap: 12px;
+  padding: 0 24px 24px;
+  overflow-x: auto;
+}
+.tab-btn {
+  flex-shrink: 0;
+  padding: 12px 20px;
+  border: 2px solid #555;
+  border-radius: 20px;
+  background: transparent;
+  color: #ccc;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.tab-btn.active {
+  border-color: #fff;
+  color: #fff;
+  background: rgba(255,255,255,0.1);
+}
+.tab-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+}
+.tab-desc {
+  display: block;
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+/* 軸の説明 */
+.typelist-axis-guide {
+  padding: 0 24px 24px;
+  font-size: 12px;
+  color: #ccc;
+}
+.axis-row, .axis-col {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.axis-label {
+  font-weight: 600;
+  min-width: 100px;
+}
+.axis-option {
+  padding: 4px 8px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+  font-size: 11px;
+}
+.axis-values {
+  display: flex;
+  gap: 8px;
+}
+
+/* マトリクス図 */
+.typelist-matrix {
+  padding: 0 24px 32px;
+}
+.matrix-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.matrix-cell {
+  aspect-ratio: 1;
+  padding: 12px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: center;
+  border: 2px solid transparent;
+}
+.matrix-cell:active {
+  transform: scale(0.95);
+}
+.matrix-cell.highlight {
+  border-color: #fff;
+  box-shadow: 0 0 12px rgba(255,255,255,0.3);
+}
+.matrix-cell-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+.matrix-cell-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+.matrix-cell-phrase {
+  font-size: 11px;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.3;
+}
+
+/* タイプ詳細展開 */
+.typelist-detail-wrapper {
+  padding: 0 24px 32px;
+}
+.typelist-detail {
+  display: none;
+  padding: 20px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+  border-left: 4px solid #fff;
+}
+.typelist-detail.show {
+  display: block;
+  animation: slideIn 0.3s ease-out;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.typelist-detail-image {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+.typelist-detail-name {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #fff;
+}
+.typelist-detail-axis {
+  font-size: 12px;
+  color: #ccc;
+  margin-bottom: 12px;
+}
+.typelist-detail-section {
+  margin-bottom: 16px;
+}
+.typelist-detail-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 8px;
+}
+.typelist-detail-section ul {
+  margin: 0;
+  padding-left: 20px;
+}
+.typelist-detail-section li {
+  font-size: 12px;
+  color: #ccc;
+  margin-bottom: 6px;
+}
+
+/* フッター */
+.typelist-footer {
+  padding: 0 24px;
+  text-align: center;
+}
+.typelist-footer .cta-btn {
+  width: 100%;
+}
+
 /* === 8タイプ一覧モーダル === */
 .modal-overlay {
   display: none;
@@ -673,12 +868,54 @@ body {
   </div>
 </div>
 
-<!-- 8タイプ一覧モーダル -->
-<div id="all-types-modal" class="modal-overlay" onclick="if(event.target===this)closeModal()">
-  <div class="modal-content">
-    <button class="modal-close" onclick="closeModal()">×</button>
-    <h2>8つのPMタイプ</h2>
-    <div id="type-list"></div>
+<!-- 画面3：タイプ一覧ページ -->
+<div id="typelist-screen" class="screen typelist-screen">
+  <div class="typelist-header">
+    <h1>8つのPMタイプ</h1>
+    <p class="typelist-description">3つの軸であなたに最適なチームを作ろう</p>
+  </div>
+
+  <!-- タブ切替 -->
+  <div class="typelist-tabs">
+    <button class="tab-btn active" data-tab="genba" onclick="switchTypeTab('genba')">
+      <span class="tab-label">ゲンバ型</span>
+      <span class="tab-desc">現場・具体から入る</span>
+    </button>
+    <button class="tab-btn" data-tab="kouzou" onclick="switchTypeTab('kouzou')">
+      <span class="tab-label">コウゾウ型</span>
+      <span class="tab-desc">全体像・構造から入る</span>
+    </button>
+  </div>
+
+  <!-- 軸の説明 -->
+  <div class="typelist-axis-guide">
+    <div class="axis-row">
+      <span class="axis-label">誰が決める？</span>
+      <span class="axis-option">ジブン（自分で決める）</span>
+      <span class="axis-option">バノリ（場に委ねる）</span>
+    </div>
+    <div class="axis-col">
+      <span class="axis-label">どう動く？</span>
+      <div class="axis-values">
+        <span class="axis-option">ゼンメン（前に出る）</span>
+        <span class="axis-option">ウラカタ（裏で支える）</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- マトリクス図 -->
+  <div class="typelist-matrix" id="typelist-matrix">
+    <!-- タブコンテンツはJavaScriptで生成 -->
+  </div>
+
+  <!-- タイプ詳細（展開時） -->
+  <div class="typelist-detail-wrapper">
+    <div id="typelist-detail" class="typelist-detail"></div>
+  </div>
+
+  <!-- 診断ボタン -->
+  <div class="typelist-footer">
+    <button class="cta-btn cta-primary" onclick="showScreen('top-screen')">自分のタイプを診断する</button>
   </div>
 </div>
 
@@ -1286,6 +1523,162 @@ function closeModal() {
 
 function onLearnMore() {
   logEvent('cta_click', { cta_type: 'learn_more' });
+}
+
+function onShowAllTypes() {
+  showScreen('typelist-screen');
+  renderTypelistMatrix('genba');
+  logEvent('cta_click', { cta_type: 'all_types' });
+}
+
+// === タイプ一覧ページ ===
+var currentTypeListTab = 'genba';
+
+function switchTypeTab(tab) {
+  currentTypeListTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
+  renderTypelistMatrix(tab);
+  logEvent('typelist_tab_switch', { tab: tab });
+}
+
+function renderTypelistMatrix(genbaOrKouzou) {
+  var container = document.getElementById('typelist-matrix');
+  container.innerHTML = '';
+
+  var types = genbaOrKouzou === 'genba'
+    ? [['GJZ', 'GBZ'], ['GJU', 'GBU']]
+    : [['KJZ', 'KBZ'], ['KJU', 'KBU']];
+
+  var grid = document.createElement('div');
+  grid.className = 'matrix-grid';
+
+  // ヘッダー行
+  var header = document.createElement('div');
+  header.style.gridColumn = '1 / -1';
+  header.style.display = 'grid';
+  header.style.gridTemplateColumns = '1fr 1fr';
+  header.style.gap = '12px';
+  header.style.marginBottom = '12px';
+  header.style.fontSize = '12px';
+  header.style.color = '#ccc';
+  header.style.fontWeight = '600';
+
+  var h1 = document.createElement('div');
+  h1.textContent = '👤 ゼンメン（前に出る）';
+  var h2 = document.createElement('div');
+  h2.textContent = '🎭 ウラカタ（裏で支える）';
+  header.appendChild(h1);
+  header.appendChild(h2);
+  grid.appendChild(header);
+
+  // セル
+  types.forEach(function(row, rowIdx) {
+    row.forEach(function(code) {
+      var t = typeData[code];
+      var cell = document.createElement('div');
+      cell.className = 'matrix-cell';
+      cell.style.background = t.color;
+      if (currentResult && currentResult.type === code) {
+        cell.classList.add('highlight');
+      }
+      cell.onclick = function() { expandTypeDetail(code); };
+
+      var img = document.createElement('img');
+      img.className = 'matrix-cell-image';
+      img.src = t.image;
+      img.onerror = function() { this.style.display = 'none'; };
+      cell.appendChild(img);
+
+      var name = document.createElement('div');
+      name.className = 'matrix-cell-name';
+      name.textContent = t.name;
+      cell.appendChild(name);
+
+      var phrase = document.createElement('div');
+      phrase.className = 'matrix-cell-phrase';
+      phrase.textContent = t.phrase;
+      cell.appendChild(phrase);
+
+      grid.appendChild(cell);
+    });
+  });
+
+  container.appendChild(grid);
+}
+
+function expandTypeDetail(code) {
+  var t = typeData[code];
+  var detail = document.getElementById('typelist-detail');
+
+  detail.innerHTML = '';
+
+  var img = document.createElement('img');
+  img.className = 'typelist-detail-image';
+  img.src = t.image;
+  img.style.marginLeft = 'auto';
+  img.style.marginRight = 'auto';
+  img.style.display = 'block';
+  detail.appendChild(img);
+
+  var name = document.createElement('div');
+  name.className = 'typelist-detail-name';
+  name.textContent = t.name;
+  detail.appendChild(name);
+
+  var axis = document.createElement('div');
+  axis.className = 'typelist-detail-axis';
+  axis.textContent = t.axis_label || '軸の組み合わせ情報';
+  detail.appendChild(axis);
+
+  // 説明
+  var desc = document.createElement('div');
+  desc.className = 'typelist-detail-section';
+  desc.innerHTML = '<div class="typelist-detail-section-title">説明</div><p>' + t.explanation + '</p>';
+  detail.appendChild(desc);
+
+  // 得意なPM業務
+  var strength = document.createElement('div');
+  strength.className = 'typelist-detail-section';
+  strength.innerHTML = '<div class="typelist-detail-section-title">💪 得意なPM業務</div>';
+  var strengthList = document.createElement('ul');
+  (t.strength || []).forEach(function(item) {
+    var li = document.createElement('li');
+    li.textContent = item;
+    strengthList.appendChild(li);
+  });
+  strength.appendChild(strengthList);
+  detail.appendChild(strength);
+
+  // 相性
+  var chemistry = document.createElement('div');
+  chemistry.className = 'typelist-detail-section';
+  chemistry.innerHTML = '<div class="typelist-detail-section-title">🤝 相性</div>';
+  var chemistryList = document.createElement('ul');
+  if (t.good_with) {
+    var good = document.createElement('li');
+    good.innerHTML = '<strong>👍 助かる:</strong> ' + t.good_with;
+    chemistryList.appendChild(good);
+  }
+  if (t.bad_with) {
+    var bad = document.createElement('li');
+    bad.innerHTML = '<strong>⚠️ 事故る:</strong> ' + t.bad_with;
+    chemistryList.appendChild(bad);
+  }
+  chemistry.appendChild(chemistryList);
+  detail.appendChild(chemistry);
+
+  // LLMとの関係
+  var llm = document.createElement('div');
+  llm.className = 'typelist-detail-section';
+  llm.innerHTML = '<div class="typelist-detail-section-title">🤖 LLMとの関係</div><p>' + (t.llm_relation || '関連情報') + '</p>';
+  detail.appendChild(llm);
+
+  detail.classList.add('show');
+  detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  logEvent('typelist_type_expand', { expanded_type: code, user_result_type: currentResult ? currentResult.type : null });
 }
 
 // === 8タイプ一覧モーダル ===
