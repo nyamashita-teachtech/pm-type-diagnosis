@@ -1681,39 +1681,8 @@ function expandTypeDetail(code) {
   logEvent('typelist_type_expand', { expanded_type: code, user_result_type: currentResult ? currentResult.type : null });
 }
 
-// === 8タイプ一覧モーダル ===
-function renderAllTypesModal() {
-  var list = document.getElementById('type-list');
-  var codes = ['GJZ','GJU','GBZ','GBU','KJZ','KJU','KBZ','KBU'];
-  codes.forEach(function(code) {
-    var t = typeData[code];
-    var item = document.createElement('div');
-    item.className = 'type-list-item';
-
-    var dot = document.createElement('div');
-    dot.className = 'type-color-dot';
-    dot.style.background = t.color;
-    item.appendChild(dot);
-
-    var info = document.createElement('div');
-    var nameDiv = document.createElement('div');
-    nameDiv.className = 'type-list-name';
-    nameDiv.textContent = t.name;
-    info.appendChild(nameDiv);
-
-    var phraseDiv = document.createElement('div');
-    phraseDiv.className = 'type-list-phrase';
-    phraseDiv.textContent = t.phrase;
-    info.appendChild(phraseDiv);
-
-    item.appendChild(info);
-    list.appendChild(item);
-  });
-}
-
 // === 初期化 ===
 window.addEventListener('DOMContentLoaded', function() {
-  renderAllTypesModal();
   setTimeout(function() {
     document.getElementById('loading').classList.add('hide');
     setTimeout(function() {
