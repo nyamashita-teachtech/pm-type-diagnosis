@@ -486,39 +486,17 @@ body {
   margin: 0;
 }
 
-/* タブ切替 */
-.typelist-tabs {
-  display: flex;
-  gap: 12px;
-  padding: 0 24px 24px;
-  overflow-x: auto;
+/* セクション */
+.typelist-section {
+  padding: 0 24px 32px;
 }
-.tab-btn {
-  flex-shrink: 0;
-  padding: 12px 20px;
-  border: 2px solid #555;
-  border-radius: 20px;
-  background: transparent;
-  color: #ccc;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-.tab-btn.active {
-  border-color: #fff;
-  color: #fff;
-  background: rgba(255,255,255,0.1);
-}
-.tab-label {
-  display: block;
-  font-size: 13px;
+.typelist-section-title {
+  font-size: 16px;
   font-weight: 700;
-}
-.tab-desc {
-  display: block;
-  font-size: 11px;
-  opacity: 0.7;
+  color: #fff;
+  margin: 0 0 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid rgba(255,255,255,0.2);
 }
 
 /* 軸の説明 */
@@ -875,17 +853,6 @@ body {
     <p class="typelist-description">3つの軸であなたに最適なチームを作ろう</p>
   </div>
 
-  <!-- タブ切替 -->
-  <div class="typelist-tabs">
-    <button class="tab-btn active" data-tab="genba" onclick="switchTypeTab('genba')">
-      <span class="tab-label">ゲンバ型</span>
-      <span class="tab-desc">現場・具体から入る</span>
-    </button>
-    <button class="tab-btn" data-tab="kouzou" onclick="switchTypeTab('kouzou')">
-      <span class="tab-label">コウゾウ型</span>
-      <span class="tab-desc">全体像・構造から入る</span>
-    </button>
-  </div>
 
   <!-- 軸の説明 -->
   <div class="typelist-axis-guide">
@@ -904,8 +871,18 @@ body {
   </div>
 
   <!-- マトリクス図 -->
-  <div class="typelist-matrix" id="typelist-matrix">
-    <!-- タブコンテンツはJavaScriptで生成 -->
+  <div class="typelist-section">
+    <h3 class="typelist-section-title">🎯 ゲンバ型（現場・具体から入る）</h3>
+    <div class="typelist-matrix" id="typelist-matrix-genba">
+      <!-- JavaScriptで生成 -->
+    </div>
+  </div>
+
+  <div class="typelist-section">
+    <h3 class="typelist-section-title">🏗️ コウゾウ型（全体像・構造から入る）</h3>
+    <div class="typelist-matrix" id="typelist-matrix-kouzou">
+      <!-- JavaScriptで生成 -->
+    </div>
   </div>
 
   <!-- タイプ詳細（展開時） -->
@@ -1025,7 +1002,7 @@ var questions = [
 var typeData = {
   'GJZ': {
     name: 'トツゲキ隊長',
-    color: '#CC0000',
+    color: '#FF6B6B',
     image: '/pm-type-diagnosis/image/totugekitaichou.png',
     phrase: '「今そこで何起きてる？」',
     desc: '思いついたら現場へ直行。決めてから考えるスピード重視型。\n🦂 止まると不安になる。たまに後続がついてきてない。',
@@ -1038,7 +1015,7 @@ var typeData = {
   },
   'GJU': {
     name: 'シゴト匠',
-    color: '#8B4513',
+    color: '#D9956B',
     image: '/pm-type-diagnosis/image/shigototakumi.png',
     phrase: '「俺がやるよ」',
     desc: '自分で判断し、黙って手を動かす職人気質。\n🦂 「任せて」と言われる前に終わらせているが、評価されにくい。',
@@ -1051,7 +1028,7 @@ var typeData = {
   },
   'GBZ': {
     name: 'クウキ点火',
-    color: '#FF6600',
+    color: '#FFB366',
     image: '/pm-type-diagnosis/image/kuukitenka.png',
     phrase: '「今いけるでしょ」',
     desc: '流れと勢いを読んで、前に立って場を動かすタイプ。\n🦂 盛り上げたあと、着地はだいたい誰か任せ。',
@@ -1064,7 +1041,7 @@ var typeData = {
   },
   'GBU': {
     name: 'ミマモリ役',
-    color: '#228B22',
+    color: '#77EE99',
     image: '/pm-type-diagnosis/image/mimamoriyaku.png',
     phrase: '「何かあったら声かけて」',
     desc: '状況を見渡し、必要なときだけ裏から支える安定型。\n🦂 何も起きないと存在に気づかれない。',
@@ -1077,7 +1054,7 @@ var typeData = {
   },
   'KJZ': {
     name: 'コウゾウ司令',
-    color: '#000080',
+    color: '#5588FF',
     image: '/pm-type-diagnosis/image/kouzoushirei.png',
     phrase: '「全体こう組む」',
     desc: '全体像を描き、自分の判断で前に出て指揮を執る設計主導型。\n🦂 筋が通らない動きに、内心かなりイラついている。',
@@ -1090,7 +1067,7 @@ var typeData = {
   },
   'KJU': {
     name: 'ウラ配線',
-    color: '#36454F',
+    color: '#777777',
     image: '/pm-type-diagnosis/image/urahaisen.png',
     phrase: '「そこ、裏で直す」',
     desc: '表に出ず、構造と仕組みで物事を制御する黒子タイプ。\n🦂 全部分かっているが、説明する気はあまりない。',
@@ -1103,7 +1080,7 @@ var typeData = {
   },
   'KBZ': {
     name: 'リネン演説',
-    color: '#800080',
+    color: '#CC88FF',
     image: '/pm-type-diagnosis/image/rinenenzetsu.png',
     phrase: '「この話の本質はね」',
     desc: '意味や理想を言葉にして、人を動かそうとする語り部型。\n🦂 熱量は高いが、具体は後回しになりがち。',
@@ -1116,7 +1093,7 @@ var typeData = {
   },
   'KBU': {
     name: 'アワセ職',
-    color: '#E1AD01',
+    color: '#FFDD55',
     image: '/pm-type-diagnosis/image/awaseshoku.png',
     phrase: '「両方いける形探すか」',
     desc: '立場や意見をつなぎ、衝突を未然に防ぐ調整役。\n🦂 全員に分かってもらおうとして、自分の意見が消える。',
@@ -1527,82 +1504,50 @@ function onLearnMore() {
 
 function onShowAllTypes() {
   showScreen('typelist-screen');
-  renderTypelistMatrix('genba');
+  renderTypelistMatrices();
   logEvent('cta_click', { cta_type: 'all_types' });
 }
 
 // === タイプ一覧ページ ===
-var currentTypeListTab = 'genba';
-
-function switchTypeTab(tab) {
-  currentTypeListTab = tab;
-  document.querySelectorAll('.tab-btn').forEach(function(btn) {
-    btn.classList.toggle('active', btn.dataset.tab === tab);
-  });
-  renderTypelistMatrix(tab);
-  logEvent('typelist_tab_switch', { tab: tab });
+function renderTypelistMatrices() {
+  renderTypeMatrix('genba', ['GJZ', 'GBZ', 'GJU', 'GBU']);
+  renderTypeMatrix('kouzou', ['KJZ', 'KBZ', 'KJU', 'KBU']);
 }
 
-function renderTypelistMatrix(genbaOrKouzou) {
-  var container = document.getElementById('typelist-matrix');
+function renderTypeMatrix(type, codes) {
+  var container = document.getElementById('typelist-matrix-' + type);
   container.innerHTML = '';
-
-  var types = genbaOrKouzou === 'genba'
-    ? [['GJZ', 'GBZ'], ['GJU', 'GBU']]
-    : [['KJZ', 'KBZ'], ['KJU', 'KBU']];
 
   var grid = document.createElement('div');
   grid.className = 'matrix-grid';
 
-  // ヘッダー行
-  var header = document.createElement('div');
-  header.style.gridColumn = '1 / -1';
-  header.style.display = 'grid';
-  header.style.gridTemplateColumns = '1fr 1fr';
-  header.style.gap = '12px';
-  header.style.marginBottom = '12px';
-  header.style.fontSize = '12px';
-  header.style.color = '#ccc';
-  header.style.fontWeight = '600';
+  codes.forEach(function(code) {
+    var t = typeData[code];
+    var cell = document.createElement('div');
+    cell.className = 'matrix-cell';
+    cell.style.background = t.color;
+    if (currentResult && currentResult.type === code) {
+      cell.classList.add('highlight');
+    }
+    cell.onclick = function() { expandTypeDetail(code); };
 
-  var h1 = document.createElement('div');
-  h1.textContent = '👤 ゼンメン（前に出る）';
-  var h2 = document.createElement('div');
-  h2.textContent = '🎭 ウラカタ（裏で支える）';
-  header.appendChild(h1);
-  header.appendChild(h2);
-  grid.appendChild(header);
+    var img = document.createElement('img');
+    img.className = 'matrix-cell-image';
+    img.src = t.image;
+    img.onerror = function() { this.style.display = 'none'; };
+    cell.appendChild(img);
 
-  // セル
-  types.forEach(function(row, rowIdx) {
-    row.forEach(function(code) {
-      var t = typeData[code];
-      var cell = document.createElement('div');
-      cell.className = 'matrix-cell';
-      cell.style.background = t.color;
-      if (currentResult && currentResult.type === code) {
-        cell.classList.add('highlight');
-      }
-      cell.onclick = function() { expandTypeDetail(code); };
+    var name = document.createElement('div');
+    name.className = 'matrix-cell-name';
+    name.textContent = t.name;
+    cell.appendChild(name);
 
-      var img = document.createElement('img');
-      img.className = 'matrix-cell-image';
-      img.src = t.image;
-      img.onerror = function() { this.style.display = 'none'; };
-      cell.appendChild(img);
+    var phrase = document.createElement('div');
+    phrase.className = 'matrix-cell-phrase';
+    phrase.textContent = t.phrase;
+    cell.appendChild(phrase);
 
-      var name = document.createElement('div');
-      name.className = 'matrix-cell-name';
-      name.textContent = t.name;
-      cell.appendChild(name);
-
-      var phrase = document.createElement('div');
-      phrase.className = 'matrix-cell-phrase';
-      phrase.textContent = t.phrase;
-      cell.appendChild(phrase);
-
-      grid.appendChild(cell);
-    });
+    grid.appendChild(cell);
   });
 
   container.appendChild(grid);
